@@ -285,6 +285,30 @@ case 'yourdatabase':
 
 ## 🚀 部署指南
 
+### Vercel 部署（推荐）
+
+本项目已完全适配 Vercel 平台，支持前端和后端的一键部署。
+
+**快速部署：**
+```bash
+# 安装 Vercel CLI
+npm install -g vercel
+
+# 登录并部署
+vercel login
+vercel
+
+# 生产部署
+vercel --prod
+```
+
+**详细部署指南：** 请查看 [DEPLOYMENT.md](./DEPLOYMENT.md) 文件，包含完整的部署步骤、环境变量配置、问题排查等信息。
+
+**部署后的项目结构：**
+- 前端：静态文件托管
+- 后端：Serverless 函数
+- API 路由：`/api/*` 自动转发到后端函数
+
 ### Docker 部署
 
 **后端 Dockerfile:**

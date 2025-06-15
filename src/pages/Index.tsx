@@ -24,7 +24,12 @@ const Index = () => {
       console.log("尝试连接数据库:", connectionData);
       
       // 调用后端API进行真实的数据库连接测试
-      const response = await fetch('http://localhost:3001/api/database/test-connection', {
+      // 根据环境选择API地址
+    const apiUrl = import.meta.env.PROD 
+      ? '/api/database/test-connection' 
+      : 'http://localhost:3001/api/database/test-connection';
+    
+    const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

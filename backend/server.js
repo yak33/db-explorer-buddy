@@ -174,24 +174,27 @@ app.use((error, req, res, next) => {
   });
 });
 
-// 启动服务器
-app.listen(PORT, () => {
-  console.log(`\n🚀 DB Explorer Buddy Backend 服务器已启动`);
-  console.log(`📍 服务地址: http://localhost:${PORT}`);
-  console.log(`🏥 健康检查: http://localhost:${PORT}/api/health`);
-  console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`⏰ 启动时间: ${new Date().toLocaleString()}\n`);
-});
+// 在本地开发环境中启动服务器
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`\n🚀 DB Explorer Buddy Backend 服务器已启动!`);
+    console.log(`📍 服务地址: http://localhost:${PORT}`);
+    console.log(`🏥 健康检查: http://localhost:${PORT}/api/health`);
+    console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`⏰ 启动时间: ${new Date().toLocaleString()}\n`);
+  });
 
-// 优雅关闭处理
-process.on('SIGTERM', () => {
-  console.log('\n收到SIGTERM信号，正在优雅关闭服务器...');
-  process.exit(0);
-});
+  // 优雅关闭处理
+  process.on('SIGTERM', () => {
+    console.log('\n收到SIGTERM信号，正在优雅关闭服务器...');
+    process.exit(0);
+  });
 
-process.on('SIGINT', () => {
-  console.log('\n收到SIGINT信号，正在优雅关闭服务器...');
-  process.exit(0);
-});
+  process.on('SIGINT', () => {
+    console.log('\n收到SIGINT信号，正在优雅关闭服务器...');
+    process.exit(0);
+  });
+}
 
 export default app;
