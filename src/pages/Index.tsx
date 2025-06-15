@@ -1,17 +1,10 @@
 
 import { useState } from "react";
-import { DatabaseConnectionForm } from "@/components/DatabaseConnectionForm";
+import { DatabaseConnectionForm, DatabaseConnection } from "@/components/DatabaseConnectionForm";
 import { DatabaseList } from "@/components/DatabaseList";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { IpDisplay } from "@/components/IpDisplay";
 import { Database, Server } from "lucide-react";
-
-export interface DatabaseConnection {
-  host: string;
-  port: string;
-  username: string;
-  password: string;
-}
 
 export interface ConnectionResult {
   success: boolean;
@@ -28,38 +21,43 @@ const Index = () => {
     setConnectionResult(null);
 
     try {
-      // 模拟数据库连接测试 - 在实际应用中，这里会调用后端API
       console.log("尝试连接数据库:", connectionData);
       
-      // 模拟连接延迟
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 调用后端API进行真实的数据库连接测试
+      const response = await fetch('http://localhost:3001/api/database/test-connection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+           type: connectionData.type,
+           host: connectionData.host,
+           port: connectionData.port,
+           username: connectionData.username,
+           password: connectionData.password,
+           database: connectionData.database || undefined
+         })
+      });
+
+      const result = await response.json();
       
-      // 模拟连接结果（这里可以根据输入判断成功或失败）
-      if (connectionData.username === "admin" && connectionData.password === "password") {
-        const mockDatabases = [
-          "user_management",
-          "product_catalog", 
-          "order_system",
-          "analytics_data",
-          "configuration",
-          "logs_database"
-        ];
-        
+      if (result.success) {
         setConnectionResult({
           success: true,
-          message: "数据库连接成功！",
-          databases: mockDatabases
+          message: result.message || "数据库连接成功！",
+          databases: result.databases || []
         });
       } else {
         setConnectionResult({
           success: false,
-          message: "连接失败：用户名或密码错误。请检查您的凭据。"
+          message: result.message || "数据库连接失败"
         });
       }
     } catch (error) {
+      console.error('连接错误:', error);
       setConnectionResult({
         success: false,
-        message: "连接失败：网络错误或服务器不可达。"
+        message: "连接失败：无法连接到后端服务器。请确保后端服务正在运行。"
       });
     } finally {
       setIsConnecting(false);

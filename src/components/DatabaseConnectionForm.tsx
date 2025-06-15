@@ -4,8 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DatabaseConnection } from "@/pages/Index";
-import { Loader2, Database, Plug } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+export interface DatabaseConnection {
+  type: string;
+  host: string;
+  port: string;
+  username: string;
+  password: string;
+  database?: string;
+}
+import { Loader2, Database, Plug, Eye, EyeOff } from "lucide-react";
 
 interface DatabaseConnectionFormProps {
   onConnect: (connection: DatabaseConnection) => void;
@@ -14,11 +22,36 @@ interface DatabaseConnectionFormProps {
 
 export const DatabaseConnectionForm = ({ onConnect, isConnecting }: DatabaseConnectionFormProps) => {
   const [formData, setFormData] = useState<DatabaseConnection>({
-    host: "localhost",
+    type: "mysql",
+    host: "",
     port: "3306",
     username: "",
-    password: ""
+    password: "",
+    database: ""
   });
+  
+  // 控制密码显示/隐藏的状态
+  const [showPassword, setShowPassword] = useState(false);
+
+  // 数据库类型配置
+  const databaseTypes = [
+    { value: "mysql", label: "MySQL", defaultPort: "3306" },
+    { value: "postgresql", label: "PostgreSQL", defaultPort: "5432" },
+    { value: "mongodb", label: "MongoDB", defaultPort: "27017" },
+    { value: "mssql", label: "SQL Server", defaultPort: "1433" },
+    { value: "oracle", label: "Oracle", defaultPort: "1521" },
+    { value: "sqlite", label: "SQLite", defaultPort: "" }
+  ];
+
+  // 当数据库类型改变时，自动更新默认端口
+  const handleTypeChange = (type: string) => {
+    const dbType = databaseTypes.find(db => db.value === type);
+    setFormData(prev => ({
+      ...prev,
+      type,
+      port: dbType?.defaultPort || ""
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +75,24 @@ export const DatabaseConnectionForm = ({ onConnect, isConnecting }: DatabaseConn
       </CardHeader>
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="type" className="text-slate-700 font-medium">
+              数据库类型
+            </Label>
+            <Select value={formData.type} onValueChange={handleTypeChange}>
+              <SelectTrigger className="border-slate-300 focus:border-blue-500">
+                <SelectValue placeholder="选择数据库类型" />
+              </SelectTrigger>
+              <SelectContent>
+                {databaseTypes.map((dbType) => (
+                  <SelectItem key={dbType.value} value={dbType.value}>
+                    {dbType.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="host" className="text-slate-700 font-medium">
@@ -54,7 +105,8 @@ export const DatabaseConnectionForm = ({ onConnect, isConnecting }: DatabaseConn
                 onChange={(e) => handleInputChange("host", e.target.value)}
                 placeholder="localhost 或 IP 地址"
                 className="border-slate-300 focus:border-blue-500"
-                required
+                required={formData.type !== 'sqlite'}
+                disabled={formData.type === 'sqlite'}
               />
             </div>
             <div className="space-y-2">
@@ -66,9 +118,10 @@ export const DatabaseConnectionForm = ({ onConnect, isConnecting }: DatabaseConn
                 type="text"
                 value={formData.port}
                 onChange={(e) => handleInputChange("port", e.target.value)}
-                placeholder="3306"
+                placeholder={databaseTypes.find(db => db.value === formData.type)?.defaultPort || ""}
                 className="border-slate-300 focus:border-blue-500"
-                required
+                required={formData.type !== 'sqlite'}
+                disabled={formData.type === 'sqlite'}
               />
             </div>
           </div>
@@ -84,7 +137,8 @@ export const DatabaseConnectionForm = ({ onConnect, isConnecting }: DatabaseConn
               onChange={(e) => handleInputChange("username", e.target.value)}
               placeholder="数据库用户名"
               className="border-slate-300 focus:border-blue-500"
-              required
+              required={formData.type !== 'sqlite'}
+              disabled={formData.type === 'sqlite'}
             />
           </div>
           
@@ -92,14 +146,51 @@ export const DatabaseConnectionForm = ({ onConnect, isConnecting }: DatabaseConn
             <Label htmlFor="password" className="text-slate-700 font-medium">
               密码
             </Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) => handleInputChange("password", e.target.value)}
+                placeholder="数据库密码"
+                className="border-slate-300 focus:border-blue-500 pr-10"
+                required={formData.type !== 'sqlite'}
+                disabled={formData.type === 'sqlite'}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                disabled={formData.type === 'sqlite'}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-slate-500 hover:text-slate-700" />
+                ) : (
+                  <Eye className="h-4 w-4 text-slate-500 hover:text-slate-700" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="database" className="text-slate-700 font-medium">
+              {formData.type === 'sqlite' ? '数据库文件路径' : '数据库名称（可选）'}
+            </Label>
             <Input
-              id="password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => handleInputChange("password", e.target.value)}
-              placeholder="数据库密码"
+              id="database"
+              type="text"
+              value={formData.database}
+              onChange={(e) => handleInputChange("database", e.target.value)}
+              placeholder={
+                formData.type === 'sqlite' 
+                  ? "C:\\path\\to\\database.db" 
+                  : "数据库名称"
+              }
               className="border-slate-300 focus:border-blue-500"
-              required
+              required={formData.type === 'sqlite'}
             />
           </div>
           

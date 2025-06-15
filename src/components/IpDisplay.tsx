@@ -13,19 +13,77 @@ export const IpDisplay = () => {
 
   const fetchIpAddresses = async () => {
     setIsLoading(true);
+    
+    // 获取公网IP - 使用多个备用API
+    const publicIpApis = [
+      'https://api.ipify.org?format=json',
+      'https://ipapi.co/json/',
+      'https://httpbin.org/ip',
+      'https://api.my-ip.io/ip.json'
+    ];
+    
+    let publicIpFound = false;
+    
+    for (const apiUrl of publicIpApis) {
+      if (publicIpFound) break;
+      
+      try {
+        console.log(`尝试获取公网IP: ${apiUrl}`);
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          },
+          timeout: 5000 // 5秒超时
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('API响应数据:', data);
+        
+        let ip = '';
+        // 根据不同API的响应格式提取IP
+        if (data.ip) {
+          ip = data.ip;
+        } else if (data.origin) {
+          ip = data.origin;
+        } else if (typeof data === 'string') {
+          ip = data;
+        }
+        
+        if (ip && /^\d+\.\d+\.\d+\.\d+$/.test(ip)) {
+          setPublicIp(ip);
+          publicIpFound = true;
+          console.log(`成功获取公网IP: ${ip}`);
+          break;
+        }
+      } catch (error) {
+        console.warn(`API ${apiUrl} 失败:`, error);
+        continue;
+      }
+    }
+    
+    if (!publicIpFound) {
+      console.error('所有公网IP API都失败了');
+      toast({
+        title: "获取公网IP失败",
+        description: "所有IP获取服务都无法访问，请检查网络连接",
+        variant: "destructive",
+      });
+    }
+    
+    // 获取本地IP（通过WebRTC）
     try {
-      // 获取公网IP
-      const publicResponse = await fetch('https://api.ipify.org?format=json');
-      const publicData = await publicResponse.json();
-      setPublicIp(publicData.ip);
-
-      // 尝试获取本地IP（通过WebRTC）
       const pc = new RTCPeerConnection({
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
       });
       
       pc.createDataChannel("");
-      pc.createOffer().then(offer => pc.setLocalDescription(offer));
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
       
       pc.onicecandidate = (ice) => {
         if (ice.candidate) {
@@ -33,20 +91,22 @@ export const IpDisplay = () => {
           const ipMatch = candidate.match(/(\d+\.\d+\.\d+\.\d+)/);
           if (ipMatch && !ipMatch[1].startsWith('169.254')) {
             setLocalIp(ipMatch[1]);
+            console.log(`获取到本地IP: ${ipMatch[1]}`);
             pc.close();
           }
         }
       };
+      
+      // 5秒后关闭连接
+      setTimeout(() => {
+        pc.close();
+      }, 5000);
+      
     } catch (error) {
-      console.error('获取IP地址失败:', error);
-      toast({
-        title: "获取IP失败",
-        description: "无法获取IP地址信息",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      console.warn('获取本地IP失败:', error);
     }
+    
+    setIsLoading(false);
   };
 
   useEffect(() => {
