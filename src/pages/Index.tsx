@@ -3,6 +3,7 @@ import { useState } from "react";
 import { DatabaseConnectionForm } from "@/components/DatabaseConnectionForm";
 import { DatabaseList } from "@/components/DatabaseList";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
+import { IpDisplay } from "@/components/IpDisplay";
 import { Database, Server } from "lucide-react";
 
 export interface DatabaseConnection {
@@ -83,9 +84,9 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Connection Form */}
-          <div className="space-y-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Connection Form and Status */}
+          <div className="lg:col-span-1 space-y-6">
             <DatabaseConnectionForm 
               onConnect={handleConnection}
               isConnecting={isConnecting}
@@ -100,26 +101,32 @@ const Index = () => {
             )}
           </div>
 
-          {/* Database List */}
-          <div className="space-y-6">
-            <DatabaseList 
-              databases={connectionResult?.databases || []}
-              isVisible={connectionResult?.success || false}
-            />
+          {/* Middle Column - IP Information */}
+          <div className="lg:col-span-1 space-y-6">
+            <IpDisplay />
             
             {/* Tips Card */}
             <div className="bg-white rounded-lg shadow-md p-6 border border-slate-200">
               <div className="flex items-center mb-3">
                 <Server className="h-5 w-5 text-blue-600 mr-2" />
-                <h3 className="font-semibold text-slate-800">测试提示</h3>
+                <h3 className="font-semibold text-slate-800">连接提示</h3>
               </div>
               <div className="text-sm text-slate-600 space-y-2">
                 <p>• 测试账户：用户名 "admin"，密码 "password"</p>
                 <p>• 支持 MySQL、PostgreSQL、SQL Server 等</p>
                 <p>• 请确保数据库服务器允许远程连接</p>
                 <p>• 检查防火墙和网络安全组设置</p>
+                <p>• 将公网IP提供给管理员加入白名单</p>
               </div>
             </div>
+          </div>
+
+          {/* Right Column - Database List */}
+          <div className="lg:col-span-1 space-y-6">
+            <DatabaseList 
+              databases={connectionResult?.databases || []}
+              isVisible={connectionResult?.success || false}
+            />
           </div>
         </div>
       </div>
