@@ -1,5 +1,3 @@
-# Welcome to your Lovable project
-
 # DB Explorer Buddy 🗄️
 
 一个现代化的数据库连接测试工具，支持多种主流数据库的连接测试和管理。
